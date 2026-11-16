@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OpenStick Control Center</title>
+<style>
+:root{--bg:#0f1419;--card:#18202a;--card2:#1e2833;--line:#2a3646;--txt:#e6edf3;--mut:#8b9bb0;--acc:#3b82f6;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:16px;margin:0}
+nav{display:flex;gap:4px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;color:var(--mut);padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;font:inherit}
+nav button.on{background:var(--card2);color:var(--txt)}
+main{max-width:960px;margin:0 auto;padding:16px}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0}
+.row+.row{border-top:1px solid var(--line)}
+.mut{color:var(--mut)}.small{font-size:12px}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+.badge.ok{color:var(--ok);border-color:#1d5a35}.badge.warn{color:var(--warn);border-color:#6b4b0c}.badge.bad{color:var(--bad);border-color:#6b2020}.badge.acc{color:var(--acc);border-color:#1e3f7a}
+button.btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:7px 14px;cursor:pointer;font:inherit}
+button.btn.sec{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+button.btn.dng{background:#7f1d1d}
+button.btn.sm{padding:4px 10px;font-size:13px}
+button:disabled{opacity:.5;cursor:default}
+input,select{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;width:100%}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 4px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:12px;color:var(--mut);font-weight:500}
+.tw{overflow-x:auto}
+.bars{display:inline-flex;align-items:flex-end;gap:2px;height:16px;vertical-align:middle}
+.bars i{width:4px;background:var(--line);border-radius:1px;display:block}
+.bars i.f{background:var(--ok)}
+.bars.w i.f{background:var(--warn)}.bars.b i.f{background:var(--bad)}
+.meter{height:8px;background:var(--card2);border-radius:99px;overflow:hidden}
+.meter>div{height:100%;background:var(--acc)}
+.switch{position:relative;width:44px;height:24px;flex:none}
+.switch input{opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;background:var(--line);border-radius:99px;cursor:pointer;transition:.2s}
+.switch span:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.switch input:checked+span{background:var(--ok)}
+.switch input:checked+span:before{transform:translateX(20px)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;z-index:20}
+#toast div{background:var(--card2);border:1px solid var(--line);padding:9px 14px;border-radius:8px;max-width:90vw}
+#toast .err{border-color:var(--bad)}#toast .ok{border-color:var(--ok)}
+dialog{background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:min(340px,90vw)}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+.empty{color:var(--mut);padding:16px 0;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>OpenStick Control Center</h1>
+  <div><span id="conn" class="badge">...</span> <span id="uptime" class="mut small"></span></div>
+</header>
+<nav id="nav">
+  <button data-tab="dash" class="on">Dashboard</button>
+  <button data-tab="wifi">WiFi</button>
+  <button data-tab="mobile">4G</button>
+  <button data-tab="conns">Koneksi</button>
+  <button data-tab="sys">Sistem</button>
+</nav>
+<main>
+
+<section id="tab-dash" class="tab on">
+  <div class="grid">
+    <div class="card"><h2>Radio</h2>
+      <div class="row"><span>WiFi</span><label class="switch"><input type="checkbox" id="r-wifi"><span></span></label></div>
+      <div class="row"><span>Seluler (WWAN)</span><label class="switch"><input type="checkbox" id="r-wwan"><span></span></label></div>
+    </div>
+    <div class="card"><h2>Sistem</h2>
+      <div class="row"><span class="mut">CPU load</span><span id="s-load">-</span></div>
+      <div class="row"><span class="mut">Suhu</span><span id="s-temp">-</span></div>
+      <div class="row" style="display:block"><div style="display:flex;justify-content:space-between"><span class="mut">RAM</span><span id="s-mem">-</span></div><div class="meter" style="margin-top:6px"><div id="s-memb" style="width:0"></div></div></div>
+    </div>
+  </div>
+  <div class="card"><h2>Interface</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Interface</th><th>Status</th><th>Koneksi</th><th>IPv4</th><th>↓ / ↑</th></tr></thead>
+      <tbody id="devs"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="tab-wifi" class="tab">
+  <div class="card"><h2>Pindai & sambung WiFi</h2>
+    <div class="form">
+      <div><label>Interface WiFi</label><select id="wf-if"></select></div>
+    </div>
+    <div class="actions"><button class="btn" id="wf-scan">Pindai</button></div>
+    <div class="tw" style="margin-top:10px"><table>
+      <thead><tr><th>SSID</th><th>Sinyal</th><th>Keamanan</th><th>Ch</th><th></th></tr></thead>
+      <tbody id="aps"><tr><td colspan="5" class="empty">Tekan "Pindai" untuk mencari jaringan</td></tr></tbody>
+    </table></div>
+  </div>
+  <div class="card"><h2>Hotspot <span id="hs-badge" class="badge">mati</span></h2>
+    <div class="form">
+      <div><label>SSID</label><input id="hs-ssid" value="OpenStick" maxlength="32"></div>
+      <div><label>Password (8-63)</label><input id="hs-pass" type="password" minlength="8" maxlength="63" autocomplete="new-password"></div>
+      <div><label>Band</label><select id="hs-band"><option value="bg">2.4 GHz</option><option value="a">5 GHz</option></select></div>
+    </div>
+    <p class="mut small">Memakai interface WiFi yang dipilih di atas. Memulai hotspot akan memutus koneksi WiFi client di interface itu.</p>
+    <div class="actions"><button class="btn" id="hs-start">Aktifkan</button><button class="btn sec" id="hs-stop">Matikan</button></div>
+  </div>
+</section>
+
+<section id="tab-mobile" class="tab">
+  <div class="card"><h2>Modem 4G</h2><div id="modem"><div class="empty">Memuat...</div></div></div>
+  <div class="card"><h2>Profil APN</h2>
+    <div class="form">
+      <div><label>Nama profil</label><input id="m-name" value="Mobile" maxlength="40"></div>
+      <div><label>APN</label><input id="m-apn" list="apns" placeholder="internet"><datalist id="apns"><option value="internet"><option value="3gprs"><option value="indosatgprs"><option value="smartfren"></datalist></div>
+      <div><label>Username (opsional)</label><input id="m-user" autocomplete="off"></div>
+      <div><label>Password (opsional)</label><input id="m-pass" type="password" autocomplete="new-password"></div>
+      <div><label>PIN SIM (opsional)</label><input id="m-pin" type="password" inputmode="numeric" autocomplete="off"></div>
+    </div>
+    <p class="mut small">Contoh APN saja; cek APN yang benar untuk operator Anda.</p>
+    <div class="actions">
+      <button class="btn" id="m-save-conn">Simpan & sambungkan</button>
+      <button class="btn sec" id="m-save">Simpan saja</button>
+    </div>
+    <div id="m-profiles" style="margin-top:14px"></div>
+  </div>
+</section>
+
+<section id="tab-conns" class="tab">
+  <div class="card"><h2>Koneksi tersimpan</h2>
+    <div class="tw"><table>
+      <thead><tr><th>Nama</th><th>Tipe</th><th>Perangkat</th><th>Auto</th><th></th></tr></thead>
+      <tbody id="conn-list"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="tab-sys" class="tab">
+  <div class="card"><h2>Informasi</h2><div id="sys-info"></div></div>
+  <div class="card"><h2>Daya</h2><button class="btn dng" id="reboot">Reboot perangkat</button></div>
+</section>
+</main>
+
+<dialog id="pwdlg">
+  <form id="pwform" method="dialog">
+    <h3 style="margin:0 0 4px" id="pw-title">Sambung</h3>
+    <label>Password WiFi</label>
+    <input id="pw-input" type="password" autocomplete="off">
+    <div class="actions" style="justify-content:flex-end">
+      <button type="button" class="btn sec" id="pw-cancel">Batal</button>
+      <button type="submit" class="btn">Sambung</button>
+    </div>
+  </form>
+</dialog>
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const state = { tab: 'dash', status: null, prev: {}, rates: {} };
+
+async function api(url, method, body) {
+  const opt = { method: method || 'GET', headers: {} };
+  if (opt.method !== 'GET') { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body || {}); }
+  const r = await fetch(url, opt);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function toast(msg, type) {
+  const d = document.createElement('div');
+  d.className = type || '';
+  d.textContent = msg;
+  $('#toast').appendChild(d);
+  setTimeout(() => d.remove(), type === 'err' ? 6000 : 3000);
+}
+// Jalankan aksi dengan tombol dinonaktifkan selama proses
+async function act(btn, fn, okMsg) {
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fn();
+    if (okMsg) toast(okMsg, 'ok');
+    return r;
+  } catch (e) {
+    toast(e.message, 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+const fmtBytes = (b) => { const u = ['B','KB','MB','GB']; let i = 0; while (b >= 1024 && i < 3) { b /= 1024; i++; } return b.toFixed(i ? 1 : 0) + ' ' + u[i]; };
+const fmtRate = (b) => fmtBytes(b || 0) + '/s';
+const fmtUp = (s) => { const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60); return (d ? d + 'h ' : '') + h + 'j ' + m + 'm'; };
+function bars(pct) {
+  const n = Math.min(4, Math.ceil(pct / 25));
+  const cls = pct >= 50 ? '' : pct >= 25 ? 'w' : 'b';
+  let h = '<span class="bars ' + cls + '">';
+  for (let i = 1; i <= 4; i++) h += '<i class="' + (i <= n ? 'f' : '') + '" style="height:' + (i * 4) + 'px"></i>';
+  return h + '</span> <span class="mut small">' + pct + '%</span>';
+}
+const stateBadge = (s) => '<span class="badge ' + (s === 'connected' ? 'ok' : /connecting|prepare|config|ip-/.test(s) ? 'warn' : s === 'unavailable' || s === 'unmanaged' ? '' : 'bad') + '">' + esc(s) + '</span>';
+
+/* ---------- navigasi ---------- */
+$('#nav').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  state.tab = b.dataset.tab;
+  document.querySelectorAll('nav button').forEach((x) => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x.id === 'tab-' + state.tab));
+  if (state.tab === 'mobile') loadMobile();
+});
+
+/* ---------- status / dashboard ---------- */
+async function loadStatus() {
+  try {
+    const s = await api('/api/status');
+    const now = Date.now();
+    Object.keys(s.traffic).forEach((k) => {
+      const p = state.prev[k], c = s.traffic[k];
+      if (p) { const dt = (now - p.t) / 1000; if (dt > 0) state.rates[k] = { rx: Math.max(0, (c.rx - p.rx) / dt), tx: Math.max(0, (c.tx - p.tx) / dt) }; }
+      state.prev[k] = { rx: c.rx, tx: c.tx, t: now };
+    });
+    state.status = s;
+    render();
+  } catch (e) {
+    $('#conn').className = 'badge bad'; $('#conn').textContent = 'Error';
+    if (!state.errShown) { toast(e.message, 'err'); state.errShown = true; }
+    return;
+  }
+  state.errShown = false;
+}
+
+function render() {
+  const s = state.status;
+  const cm = { full: ['Online', 'ok'], limited: ['Terbatas', 'warn'], portal: ['Portal', 'warn'], none: ['Offline', 'bad'] }[s.connectivity] || [s.connectivity, ''];
+  $('#conn').className = 'badge ' + cm[1]; $('#conn').textContent = cm[0];
+  $('#uptime').textContent = 'uptime ' + fmtUp(s.system.uptime);
+  $('#r-wifi').checked = s.radio.wifi; $('#r-wwan').checked = s.radio.wwan;
+
+  const sy = s.system, used = sy.memTotal - sy.memFree, pct = Math.round(used / sy.memTotal * 100);
+  $('#s-load').textContent = sy.load.map((x) => x.toFixed(2)).join(' / ') + '  (' + sy.cpus + ' core)';
+  $('#s-temp').textContent = sy.temp == null ? 'n/a' : sy.temp.toFixed(1) + ' °C';
+  $('#s-mem').textContent = fmtBytes(used) + ' / ' + fmtBytes(sy.memTotal);
+  $('#s-memb').style.width = pct + '%';
+
+  const rows = s.devices.map((d) => {
+    const det = s.details[d.name] || { ip4: [] };
+    const r = state.rates[d.name];
+    return '<tr><td><b>' + esc(d.name) + '</b><div class="mut small">' + esc(d.type) + '</div></td><td>' + stateBadge(d.state) + '</td><td>' + esc(d.connection === '--' ? '' : d.connection) + '</td><td>' + esc(det.ip4.join(', ')) + '</td><td class="small">' + (r ? '↓ ' + fmtRate(r.rx) + '<br>↑ ' + fmtRate(r.tx) : '-') + '</td></tr>';
+  });
+  $('#devs').innerHTML = rows.join('') || '<tr><td colspan="5" class="empty">Tidak ada interface</td></tr>';
+
+  renderWifiIfs(); renderConns(); renderSys();
+  const hs = s.connections.find((c) => c.name === 'Hotspot' && c.active);
+  $('#hs-badge').className = 'badge ' + (hs ? 'ok' : ''); $('#hs-badge').textContent = hs ? 'aktif' : 'mati';
+}
+
+$('#r-wifi').onchange = (e) => act(null, () => api('/api/radio', 'POST', { type: 'wifi', enabled: e.target.checked }).then(loadStatus));
+$('#r-wwan').onchange = (e) => act(null, () => api('/api/radio', 'POST', { type: 'wwan', enabled: e.target.checked }).then(loadStatus));
+
+/* ---------- WiFi ---------- */
+function renderWifiIfs() {
+  const sel = $('#wf-if'), cur = sel.value;
+  const ifs = state.status.devices.filter((d) => d.type === 'wifi').map((d) => d.name);
+  if (sel.dataset.k === ifs.join(',')) return;
+  sel.dataset.k = ifs.join(',');
+  sel.innerHTML = ifs.map((n) => '<option>' + esc(n) + '</option>').join('') || '<option value="">(tidak ada)</option>';
+  if (ifs.indexOf(cur) >= 0) sel.value = cur;
+}
+let apList = [];
+$('#wf-scan').onclick = (e) => act(e.target, async () => {
+  e.target.textContent = 'Memindai...';
+  try {
+    const r = await api('/api/wifi/scan?ifname=' + encodeURIComponent($('#wf-if').value));
+    apList = r.aps; renderAps();
+  } finally { e.target.textContent = 'Pindai'; }
+});
+function renderAps() {
+  $('#aps').innerHTML = apList.map((a, i) =>
+    '<tr><td><b>' + esc(a.ssid || '(tersembunyi)') + '</b> ' + (a.inUse ? '<span class="badge ok">terhubung</span> ' : '') + (a.saved ? '<span class="badge acc">tersimpan</span>' : '') + '<div class="mut small">' + esc(a.bssid) + '</div></td><td>' + bars(a.signal) + '</td><td class="small">' + esc(a.security || 'Terbuka') + '</td><td class="small">' + esc(a.chan) + (a.freq >= 4900 ? ' (5G)' : '') + '</td><td>' +
+    (a.inUse ? '<button class="btn sm sec" data-i="' + i + '" data-a="dis">Putus</button>' : '<button class="btn sm" data-i="' + i + '" data-a="con">Sambung</button>') + '</td></tr>'
+  ).join('') || '<tr><td colspan="5" class="empty">Tidak ada jaringan ditemukan</td></tr>';
+}
+$('#aps').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  const ap = apList[+b.dataset.i], ifname = $('#wf-if').value;
+  if (b.dataset.a === 'dis') return act(b, () => api('/api/wifi/disconnect', 'POST', { ifname }).then(() => { toast('Terputus', 'ok'); return loadStatus(); }));
+  if (ap.security && !ap.saved) {
+    $('#pw-title').textContent = 'Sambung ke ' + ap.ssid; $('#pw-input').value = '';
+    $('#pwdlg').showModal(); $('#pwdlg').dataset.i = b.dataset.i; return;
+  }
+  doConnect(b, ap.ssid, '', ifname);
+};
+function doConnect(btn, ssid, password, ifname) {
+  return act(btn, async () => {
+    const r = await api('/api/wifi/connect', 'POST', { ssid, password, ifname });
+    toast(r.message || 'Tersambung', 'ok'); await loadStatus(); $('#wf-scan').click();
+  });
+}
+$('#pw-cancel').onclick = () => $('#pwdlg').close();
+$('#pwform').onsubmit = (e) => {
+  e.preventDefault();
+  const ap = apList[+$('#pwdlg').dataset.i]; $('#pwdlg').close();
+  doConnect(null, ap.ssid, $('#pw-input').value, $('#wf-if').value);
+};
+$('#hs-start').onclick = (e) => act(e.target, async () => {
+  await api('/api/hotspot/start', 'POST', { ifname: $('#wf-if').value, ssid: $('#hs-ssid').value, password: $('#hs-pass').value, band: $('#hs-band').value });
+  await loadStatus();
+}, 'Hotspot aktif');
+$('#hs-stop').onclick = (e) => act(e.target, async () => { await api('/api/hotspot/stop', 'POST'); await loadStatus(); }, 'Hotspot dimatikan');
+
+/* ---------- 4G ---------- */
+let mobile = null;
+async function loadMobile() {
+  try { mobile = await api('/api/mobile'); renderMobile(); } catch (e) { $('#modem').innerHTML = '<div class="empty">' + esc(e.message) + '</div>'; }
+}
+function renderMobile() {
+  const m = mobile.modem;
+  $('#modem').innerHTML = m
+    ? '<div class="row"><span class="mut">Modem</span><span>' + esc((m.manufacturer + ' ' + m.model).trim() || 'ID ' + m.id) + '</span></div>' +
+      '<div class="row"><span class="mut">Status</span><span>' + stateBadge(m.state === 'connected' ? 'connected' : m.state) + '</span></div>' +
+      '<div class="row"><span class="mut">Operator</span><span>' + esc(m.operator || '-') + (m.operatorCode ? ' (' + esc(m.operatorCode) + ')' : '') + '</span></div>' +
+      '<div class="row"><span class="mut">Registrasi</span><span>' + esc(m.registration || '-') + '</span></div>' +
+      '<div class="row"><span class="mut">Teknologi</span><span>' + esc(m.tech.join(', ').toUpperCase() || '-') + '</span></div>' +
+      '<div class="row"><span class="mut">Sinyal</span><span>' + bars(m.signal) + '</span></div>' +
+      '<div class="row"><span class="mut">IMEI</span><span>' + esc(m.imei || '-') + '</span></div>' +
+      (m.failedReason ? '<div class="row"><span class="mut">Gagal</span><span class="badge bad">' + esc(m.failedReason) + '</span></div>' : '') +
+      '<div class="actions"><button class="btn sec sm" id="m-reset">Reset modem</button></div>'
+    : '<div class="empty">Modem tidak terdeteksi via ModemManager (mmcli). Pastikan ModemManager berjalan.</div>';
+  const first = mobile.profiles[0];
+  if (first && !$('#m-apn').value) { $('#m-name').value = first.name; $('#m-apn').value = first.apn; $('#m-user').value = first.username; }
+  $('#m-profiles').innerHTML = mobile.profiles.length
+    ? '<table><thead><tr><th>Profil</th><th>APN</th><th>Status</th><th></th></tr></thead><tbody>' + mobile.profiles.map((p) =>
+        '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.apn) + '</td><td>' + (p.active ? '<span class="badge ok">aktif</span>' : '<span class="badge">mati</span>') + '</td><td>' +
+        (p.active ? '<button class="btn sm sec" data-a="down" data-u="' + esc(p.uuid) + '">Putus</button>' : '<button class="btn sm" data-a="up" data-u="' + esc(p.uuid) + '">Sambung</button>') + '</td></tr>').join('') + '</tbody></table>'
+    : '<div class="mut small">Belum ada profil 4G.</div>';
+}
+$('#modem').onclick = (e) => {
+  if (e.target.id !== 'm-reset' || !confirm('Reset modem? Koneksi 4G akan terputus sementara.')) return;
+  act(e.target, () => api('/api/mobile/reset', 'POST'), 'Modem di-reset');
+};
+$('#m-profiles').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  act(b, async () => { await api('/api/connection/' + b.dataset.a, 'POST', { uuid: b.dataset.u }); await loadMobile(); await loadStatus(); }, b.dataset.a === 'up' ? 'Tersambung' : 'Terputus');
+};
+function saveMobile(btn, connect) {
+  return act(btn, async () => {
+    await api('/api/mobile/profile', 'POST', { name: $('#m-name').value, apn: $('#m-apn').value, username: $('#m-user').value, password: $('#m-pass').value, pin: $('#m-pin').value, connect });
+    $('#m-pass').value = ''; $('#m-pin').value = '';
+    await loadMobile(); await loadStatus();
+  }, connect ? 'Profil disimpan & tersambung' : 'Profil disimpan');
+}
+$('#m-save-conn').onclick = (e) => saveMobile(e.target, true);
+$('#m-save').onclick = (e) => saveMobile(e.target, false);
+
+/* ---------- koneksi ---------- */
+function renderConns() {
+  const c = state.status.connections;
+  $('#conn-list').innerHTML = c.map((x) =>
+    '<tr><td>' + esc(x.name) + (x.active ? ' <span class="badge ok">aktif</span>' : '') + '</td><td class="small">' + esc(x.type) + '</td><td class="small">' + esc(x.device === '--' ? '' : x.device) + '</td>' +
+    '<td><label class="switch"><input type="checkbox" data-a="auto" data-u="' + esc(x.uuid) + '" ' + (x.autoconnect ? 'checked' : '') + '><span></span></label></td><td style="white-space:nowrap">' +
+    (x.active ? '<button class="btn sm sec" data-a="down" data-u="' + esc(x.uuid) + '">Putus</button>' : '<button class="btn sm" data-a="up" data-u="' + esc(x.uuid) + '">Aktifkan</button>') +
+    ' <button class="btn sm dng" data-a="delete" data-u="' + esc(x.uuid) + '" data-n="' + esc(x.name) + '">Hapus</button></td></tr>'
+  ).join('') || '<tr><td colspan="5" class="empty">Tidak ada koneksi</td></tr>';
+}
+$('#conn-list').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.a === 'delete' && !confirm('Hapus koneksi "' + b.dataset.n + '"?')) return;
+  act(b, async () => { await api('/api/connection/' + b.dataset.a, 'POST', { uuid: b.dataset.u }); await loadStatus(); }, 'Berhasil');
+});
+$('#conn-list').addEventListener('change', (e) => {
+  const i = e.target; if (i.dataset.a !== 'auto') return;
+  act(null, () => api('/api/connection/autoconnect', 'POST', { uuid: i.dataset.u, enabled: i.checked }).then(loadStatus));
+});
+
+/* ---------- sistem ---------- */
+function renderSys() {
+  const s = state.status.system;
+  $('#sys-info').innerHTML = [['Hostname', s.hostname], ['Uptime', fmtUp(s.uptime)], ['CPU', s.cpus + ' core'], ['Load', s.load.map((x) => x.toFixed(2)).join(' / ')], ['RAM bebas', fmtBytes(s.memFree) + ' dari ' + fmtBytes(s.memTotal)], ['Suhu', s.temp == null ? 'n/a' : s.temp.toFixed(1) + ' °C']]
+    .map((r) => '<div class="row"><span class="mut">' + r[0] + '</span><span>' + esc(r[1]) + '</span></div>').join('');
+}
+$('#reboot').onclick = (e) => { if (confirm('Reboot perangkat sekarang?')) act(e.target, () => api('/api/system/reboot', 'POST'), 'Perangkat akan reboot...'); };
+
+/* ---------- polling ---------- */
+loadStatus();
+setInterval(() => { if (!document.hidden) loadStatus(); }, 3000);
+setInterval(() => { if (!document.hidden && state.tab === 'mobile') loadMobile(); }, 5000);
+</script>
+</body>
+</html>

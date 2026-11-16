@@ -1,0 +1,13 @@
+{
+  "name": "openstick-control-center",
+  "version": "1.0.0",
+  "description": "Control center WiFi & 4G untuk Linux OpenStick via nmcli",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "license": "MIT"
+}

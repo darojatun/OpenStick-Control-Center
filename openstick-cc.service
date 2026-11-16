@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenStick Control Center
+After=network.target NetworkManager.service ModemManager.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/openstick-cc
+ExecStart=/usr/bin/node /opt/openstick-cc/server.js
+Environment=PORT=80
+Environment=HOST=0.0.0.0
+Environment=AUTH_USER=admin
+Environment=AUTH_PASS=GANTI_PASSWORD_INI
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
