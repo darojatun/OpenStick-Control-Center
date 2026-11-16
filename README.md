@@ -34,7 +34,7 @@ Coba manual: `AUTH_PASS=rahasia node server.js`
 ## Environment
 | Variabel | Default | Keterangan |
 |---|---|---|
-| PORT | 8080 | Port HTTP |
+| PORT | 80 | Port HTTP |
 | HOST | 0.0.0.0 | Alamat bind |
 | AUTH_USER | admin | Username Basic Auth |
 | AUTH_PASS | (kosong) | Password; kosong = tanpa autentikasi |
